@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="retry_task" type="id" />
+    <item name="perform_view_actions" type="id" />
+    <item name="shell_complete" type="id" />
+</resources>
