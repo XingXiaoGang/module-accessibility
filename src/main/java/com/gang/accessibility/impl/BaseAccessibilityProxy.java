@@ -113,6 +113,109 @@ abstract class BaseAccessibilityProxy implements IAccessibilityProxy {
         return nodeInfo != null && nodeInfo.performAction(action);
     }
 
+    //这里的遍历不能用递归 很蛋疼
+    protected final boolean scrollNode(String className) {
+        final AccessibilityNodeInfo root = getRootNode();
+        if (root == null) {
+            return false;
+        }
+        AccessibilityNodeInfo res = null;
+
+        out:
+        for (int i = 0; i < root.getChildCount(); i++) {
+            AccessibilityNodeInfo temp = root.getChild(i);
+            if (className.contains(temp.getClassName().toString())) {
+                res = temp;
+                break out;
+            } else if (temp.getChildCount() > 0) {
+                for (int j = 0; j < temp.getChildCount(); j++) {
+                    AccessibilityNodeInfo temp1 = temp.getChild(j);
+                    if (className.contains(temp1.getClassName().toString())) {
+                        res = temp1;
+                        break out;
+                    } else if (temp1.getChildCount() > 0) {
+                        for (int k = 0; k < temp1.getChildCount(); k++) {
+                            AccessibilityNodeInfo temp2 = temp1.getChild(k);
+                            if (className.contains(temp2.getClassName().toString())) {
+                                res = temp2;
+                                break out;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return res != null && res.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
+    }
+
+    //智能点击
+    protected final boolean intelligentClickNode(AccessibilityNodeInfo nodeInfo) {
+        boolean res = false;
+        if (nodeInfo.isClickable()) {
+            res = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        }
+        //往上一层找
+        if (!res) {
+            AccessibilityNodeInfo parent = nodeInfo.getParent();
+            if (parent.isClickable()) {
+                res = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+            if (!res) {
+                int childCount = parent.getChildCount();
+                //找同级别的
+                for (int i = 0; i < childCount; i++) {
+                    AccessibilityNodeInfo accessibilityNodeInfo = parent.getChild(i);
+                    if (!res && accessibilityNodeInfo.isClickable()) {
+                        res = accessibilityNodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                    }
+                }
+            }
+            //往上二层
+            if (!res) {
+                AccessibilityNodeInfo parentP = parent.getParent();
+                if (parentP != null && parentP.isClickable()) {
+                    res = parentP.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                }
+            }
+        }
+        Log.d(TAG, "intelligentClickNode res:" + res);
+        return res;
+    }
+
+    //智能check
+    protected final boolean intelligentCheckNode(AccessibilityNodeInfo nodeInfo) {
+        boolean res = false;
+        if (nodeInfo.isCheckable()) {
+            res = nodeInfo.isChecked() || nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        }
+        //往上一层找
+        if (!res) {
+            AccessibilityNodeInfo parent = nodeInfo.getParent();
+            if (parent.isCheckable()) {
+                res = parent.isChecked() || parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+            if (!res) {
+                int childCount = parent.getChildCount();
+                //找同级别的
+                for (int i = 0; i < childCount; i++) {
+                    AccessibilityNodeInfo brotherNode = parent.getChild(i);
+                    if (!res && brotherNode.isCheckable()) {
+                        res = brotherNode.isChecked() || brotherNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                    }
+                }
+            }
+            //往上二层
+            if (!res) {
+                AccessibilityNodeInfo parentP = parent.getParent();
+                if (parentP != null && parentP.isCheckable()) {
+                    res = parentP.isChecked() || parentP.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                }
+            }
+        }
+        Log.d("test_access", "intelligentCheckNode res:" + res);
+        return res;
+    }
+
     protected final void printChilds(AccessibilityNodeInfo root) {
         if (root != null) {
             Log.d(TAG, "====root start======name:" + root.getClassName() + ",child:" + root.getChildCount());
