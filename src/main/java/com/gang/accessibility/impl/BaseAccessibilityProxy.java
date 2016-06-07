@@ -55,7 +55,7 @@ abstract class BaseAccessibilityProxy implements IAccessibilityProxy {
     }
 
     protected final AccessibilityNodeInfo findNodeByText(String id, int parents) {
-        return findNodeById(id, 0, parents);
+        return findNodeByText(id, 0, parents);
     }
 
     protected final AccessibilityNodeInfo findNodeByText(String id, int index, int parents) {
