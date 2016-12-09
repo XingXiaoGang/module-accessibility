@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -87,7 +88,14 @@ abstract class BaseAccessibilityProxy implements IAccessibilityProxy {
             }
         }
         if (!nodeInfos.isEmpty()) {
-            accessibilityNodeInfo = nodeInfos.size() > index ? nodeInfos.get(index) : nodeInfos.get(0);
+            for (AccessibilityNodeInfo nodeInfo : nodeInfos) {
+                if (TextUtils.equals(nodeInfo.getText(), key)) {
+                    accessibilityNodeInfo = nodeInfo;
+                }
+            }
+            if (accessibilityNodeInfo == null) {
+                accessibilityNodeInfo = nodeInfos.size() > index ? nodeInfos.get(index) : nodeInfos.get(0);
+            }
             if (parents > 0) {
                 for (int i = 0; i < parents; i++) {
                     if (accessibilityNodeInfo != null) {

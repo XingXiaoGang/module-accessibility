@@ -2,7 +2,7 @@
     package="com.gang.accessibility">
 
     <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -12,9 +12,10 @@
             android:name=".AccessibilityService"
             android:enabled="true"
             android:exported="true"
+            android:label="自动安装确认服务"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService"/>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
             <meta-data
                 android:name="android.accessibilityservice"

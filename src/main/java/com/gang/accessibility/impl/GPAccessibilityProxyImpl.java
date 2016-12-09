@@ -149,4 +149,9 @@ public class GPAccessibilityProxyImpl extends BaseAccessibilityProxy {
             }
         }
     }
+
+    @Override
+    public void destroy() {
+
+    }
 }

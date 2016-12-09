@@ -9,4 +9,5 @@ public interface IAccessibilityProxy {
 
     void onAccessibilityEvent(AccessibilityEvent event);
 
+    void destroy();
 }

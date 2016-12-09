@@ -71,4 +71,9 @@ class BannerAdAccessibilityImpl extends BaseAccessibilityProxy {
         }
         return success;
     }
+
+    @Override
+    public void destroy() {
+
+    }
 }

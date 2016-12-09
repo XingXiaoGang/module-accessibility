@@ -20,13 +20,20 @@ public class AccessibilityProxyDispatcher implements IAccessibilityProxy {
         this.mContext = accessibilityService;
         this.mAccessibilityService = accessibilityService;
         //todo 根据不同的需求 设置不同的代理
-        mProxy = new BannerAdAccessibilityImpl(accessibilityService);
+        mProxy = new DialogClickAccessibilityProxyImpl(accessibilityService);
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (mProxy != null) {
             mProxy.onAccessibilityEvent(event);
+        }
+    }
+
+    @Override
+    public void destroy() {
+        if (mProxy != null) {
+            mProxy.destroy();
         }
     }
 }

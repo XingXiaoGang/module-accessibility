@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
+import android.widget.Toast;
 
 import com.gang.accessibility.impl.AccessibilityProxyDispatcher;
 
@@ -82,10 +83,15 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
                 case Statics.START: {
                     isOpen = true;
                     setServiceInfo();
+                    Toast.makeText(getApplicationContext(), "stated", Toast.LENGTH_SHORT).show();
                     break;
                 }
                 case Statics.STOP: {
                     isOpen = false;
+                    Toast.makeText(getApplicationContext(), "stoped", Toast.LENGTH_SHORT).show();
+                    if (accessibilityProxy != null) {
+                        accessibilityProxy.destroy();
+                    }
                     break;
                 }
             }
