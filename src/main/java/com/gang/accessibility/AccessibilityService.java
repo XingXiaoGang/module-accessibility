@@ -1,35 +1,25 @@
 package com.gang.accessibility;
 
 import android.accessibilityservice.AccessibilityServiceInfo;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.Toast;
 
-import com.gang.accessibility.impl.AccessibilityProxyDispatcher;
+import static com.gang.accessibility.ModuleConfig.DEBUG;
+import static com.gang.accessibility.ModuleConfig.TAG;
 
 /**
  * Created by Administrator on 2016/5/6.
  */
 public class AccessibilityService extends android.accessibilityservice.AccessibilityService {
 
-    private IAccessibilityProxy accessibilityProxy;
+    private AccessibilityTask mTask;
     private boolean isOpen = false;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        IntentFilter filter = new IntentFilter(Statics.ACCESSIBILITY_SERVER_ACTION);
-
-        //要用application
-        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(getApplication());
-        localBroadcastManager.registerReceiver(new ActionReceiver(), filter);
-
-        accessibilityProxy = new AccessibilityProxyDispatcher(this);
     }
 
     @Override
@@ -40,20 +30,41 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        return super.onStartCommand(intent, flags, startId);
+        int command = intent.getIntExtra(Statics.Key.COMMAND, -1);
+        switch (command) {
+            case Statics.START: {
+                mTask = (AccessibilityTask) intent.getSerializableExtra("task_impl");
+                if (mTask != null) {
+                    isOpen = true;
+                    setServiceInfo();
+                    Toast.makeText(getApplicationContext(), "stated", Toast.LENGTH_SHORT).show();
+                    if (DEBUG) {
+                        Log.d(TAG, "onStartCommand: started , mTask " + mTask);
+                    }
+                } else {
+                    if (DEBUG) {
+                        Log.d(TAG, "onStartCommand: start fialed , mTask is null ");
+                    }
+                }
+                break;
+            }
+            case Statics.STOP: {
+                isOpen = false;
+                mTask = null;
+                Toast.makeText(getApplicationContext(), "stoped", Toast.LENGTH_SHORT).show();
+                break;
+            }
+        }
+        return START_STICKY;
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        Log.d("test_ad", "=====onAccessibilityEvent=====" + AccessibilityEvent.eventTypeToString(event.getEventType()) + ":" + event.getClassName());
-        if (isOpen) {
-            if (accessibilityProxy != null) {
-                accessibilityProxy.onAccessibilityEvent(event);
-            } else {
-                Log.d("test_ad", "=====onAccessibilityEvent:proxy is null=====");
-            }
-        } else {
-            Log.d("test_ad", "=====onAccessibilityEvent:not open=====");
+        if (DEBUG) {
+            Log.d("test_ad", "=====onAccessibilityEvent=====" + AccessibilityEvent.eventTypeToString(event.getEventType()) + ":" + event.getClassName());
+        }
+        if (isOpen && mTask != null) {
+            mTask.onAccessibilityEvent(event);
         }
     }
 
@@ -67,34 +78,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_VISUAL;
         info.notificationTimeout = 100;
-        info.packageNames = new String[]{getPackageName(), "com.android.settings"};
+        info.packageNames = new String[]{getPackageName(), "com.tencent.mm"};
         setServiceInfo(info);
-    }
-
-    private class ActionReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent == null) {
-                return;
-            }
-            int command = intent.getIntExtra(Statics.Key.COMMAND, -1);
-            switch (command) {
-                case Statics.START: {
-                    isOpen = true;
-                    setServiceInfo();
-                    Toast.makeText(getApplicationContext(), "stated", Toast.LENGTH_SHORT).show();
-                    break;
-                }
-                case Statics.STOP: {
-                    isOpen = false;
-                    Toast.makeText(getApplicationContext(), "stoped", Toast.LENGTH_SHORT).show();
-                    if (accessibilityProxy != null) {
-                        accessibilityProxy.destroy();
-                    }
-                    break;
-                }
-            }
-        }
     }
 }

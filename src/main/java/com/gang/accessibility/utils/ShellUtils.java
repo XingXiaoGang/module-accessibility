@@ -1,4 +1,4 @@
-package utils;
+package com.gang.accessibility.utils;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;

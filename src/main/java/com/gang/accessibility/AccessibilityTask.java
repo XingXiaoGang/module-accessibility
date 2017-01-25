@@ -1,33 +1,28 @@
-package com.gang.accessibility.impl;
+package com.gang.accessibility;
 
 import android.annotation.TargetApi;
-import android.content.Intent;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import com.gang.accessibility.AccessibilityService;
-import com.gang.accessibility.IAccessibilityProxy;
-import com.gang.accessibility.R;
-import com.gang.accessibility.Statics;
-
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
-import static com.gang.accessibility.Statics.TAG;
+import static com.gang.accessibility.ModuleConfig.TAG;
 
 /**
- * Created by Administrator on 2016/5/6.
+ * Created by xingxiaogang on 2017/1/25.
  */
-abstract class BaseAccessibilityProxy implements IAccessibilityProxy {
 
+public abstract class AccessibilityTask implements Serializable {
     private AccessibilityService service;
 
-    BaseAccessibilityProxy(AccessibilityService service) {
+    public AccessibilityTask(AccessibilityService service) {
         this.service = service;
     }
 
@@ -35,12 +30,10 @@ abstract class BaseAccessibilityProxy implements IAccessibilityProxy {
         return service;
     }
 
-    protected final void finishAccessibility() {
-        Intent intent = new Intent(Statics.ACCESSIBILITY_SERVER_ACTION);
-        intent.putExtra(Statics.Key.COMMAND, Statics.STOP);
-        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(getService().getApplication());
-        localBroadcastManager.sendBroadcast(intent);
-    }
+    /**
+     * 事件来源
+     **/
+    protected abstract void onAccessibilityEvent(AccessibilityEvent event);
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     protected final AccessibilityNodeInfo getRootNode() {

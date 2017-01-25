@@ -1,4 +1,4 @@
-package utils;
+package com.gang.accessibility.utils;
 
 import android.util.Log;
 import android.view.View;

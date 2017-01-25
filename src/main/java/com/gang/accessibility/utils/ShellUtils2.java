@@ -1,4 +1,4 @@
-package utils;
+package com.gang.accessibility.utils;
 
 import android.os.Handler;
 import android.text.TextUtils;
