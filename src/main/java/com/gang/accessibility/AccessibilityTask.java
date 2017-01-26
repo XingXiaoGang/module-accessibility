@@ -4,13 +4,12 @@ import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.io.Serializable;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.gang.accessibility.ModuleConfig.TAG;
@@ -18,16 +17,16 @@ import static com.gang.accessibility.ModuleConfig.TAG;
 /**
  * Created by xingxiaogang on 2017/1/25.
  */
-
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public abstract class AccessibilityTask implements Serializable {
     private AccessibilityService service;
 
-    public AccessibilityTask(AccessibilityService service) {
-        this.service = service;
-    }
-
     protected final AccessibilityService getService() {
         return service;
+    }
+
+    protected final void setService(AccessibilityService service) {
+        this.service = service;
     }
 
     /**
@@ -40,70 +39,44 @@ public abstract class AccessibilityTask implements Serializable {
         return service.getRootInActiveWindow();
     }
 
-    protected final AccessibilityNodeInfo findNodeById(String id, int parents) {
-        return findNodeById(id, 0, parents);
-    }
-
-    protected final AccessibilityNodeInfo findNodeById(String id, int index, int parents) {
-        return findNode(id, 1, index, parents);
-    }
-
-    protected final AccessibilityNodeInfo findNodeByText(String id, int parents) {
-        return findNodeByText(id, 0, parents);
-    }
-
-    protected final AccessibilityNodeInfo findNodeByText(String id, int index, int parents) {
-        return findNode(id, 0, index, parents);
-    }
-
-    /**
-     * @param method  类型 0:根据text 1:根据id
-     * @param key     text [*] 或 id: [包名]:id/[id]
-     * @param index   结果集中的第几个
-     * @param parents 第几层父布局,默认为0,负数则表示第几层子布局
-     **/
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    private AccessibilityNodeInfo findNode(String key, int method, int index, int parents) {
+    protected final List<AccessibilityNodeInfo> findNodeWithActionByText(String text, int action) {
         AccessibilityNodeInfo accessibilityNodeInfo = null;
         final AccessibilityNodeInfo root = getRootNode();
-        if (root == null) {
-            return null;
-        }
-        List<AccessibilityNodeInfo> nodeInfos = Collections.EMPTY_LIST;
-        switch (method) {
-            case 0: {
-                nodeInfos = root.findAccessibilityNodeInfosByText(key);
-                break;
-            }
-            case 1: {
-                nodeInfos = root.findAccessibilityNodeInfosByViewId(key);
-                break;
-            }
-        }
-        if (!nodeInfos.isEmpty()) {
+        List<AccessibilityNodeInfo> res = new ArrayList<>();
+        if (root != null) {
+            final int maxDeepth = 3;
+            List<AccessibilityNodeInfo> nodeInfos = root.findAccessibilityNodeInfosByText(text);
             for (AccessibilityNodeInfo nodeInfo : nodeInfos) {
-                if (TextUtils.equals(nodeInfo.getText(), key)) {
-                    accessibilityNodeInfo = nodeInfo;
-                }
-            }
-            if (accessibilityNodeInfo == null) {
-                accessibilityNodeInfo = nodeInfos.size() > index ? nodeInfos.get(index) : nodeInfos.get(0);
-            }
-            if (parents > 0) {
-                for (int i = 0; i < parents; i++) {
-                    if (accessibilityNodeInfo != null) {
-                        accessibilityNodeInfo = accessibilityNodeInfo.getParent();
-                    }
-                }
-            } else {
-                for (int i = 0; i > parents; i--) {
-                    if (accessibilityNodeInfo != null && accessibilityNodeInfo.getChildCount() > 0) {
-                        accessibilityNodeInfo = accessibilityNodeInfo.getChild(0);
+                if ((nodeInfo.getActions() & action) == action) {
+                    res.add(nodeInfo);
+                } else {
+                    int deepth = 0;
+                    while (deepth < maxDeepth && (nodeInfo.getActions() & action) != action && nodeInfo.getParent() != null) {
+                        nodeInfo = nodeInfo.getParent();
+                        if (nodeInfo != null && (nodeInfo.getActions() & action) == action) {
+                            res.add(nodeInfo);
+                            break;
+                        }
+                        deepth++;
                     }
                 }
             }
         }
-        return accessibilityNodeInfo;
+        return res;
+    }
+
+    protected final AccessibilityNodeInfo findNodeWithActionById(String id, int action) {
+        AccessibilityNodeInfo accessibilityNodeInfo = null;
+        final AccessibilityNodeInfo root = getRootNode();
+        if (root != null) {
+            List<AccessibilityNodeInfo> nodeInfos = root.findAccessibilityNodeInfosByViewId(id);
+            for (AccessibilityNodeInfo nodeInfo : nodeInfos) {
+                if ((nodeInfo.getActions() & action) == action) {
+                    return nodeInfo;
+                }
+            }
+        }
+        return null;
     }
 
     protected final String getViewId(String idstr) {
@@ -114,112 +87,9 @@ public abstract class AccessibilityTask implements Serializable {
         return nodeInfo != null && nodeInfo.performAction(action);
     }
 
-    //这里的遍历不能用递归 很蛋疼
-    protected final boolean scrollNode(String className) {
-        final AccessibilityNodeInfo root = getRootNode();
-        if (root == null) {
-            return false;
-        }
-        AccessibilityNodeInfo res = null;
-
-        out:
-        for (int i = 0; i < root.getChildCount(); i++) {
-            AccessibilityNodeInfo temp = root.getChild(i);
-            if (className.contains(temp.getClassName().toString())) {
-                res = temp;
-                break out;
-            } else if (temp.getChildCount() > 0) {
-                for (int j = 0; j < temp.getChildCount(); j++) {
-                    AccessibilityNodeInfo temp1 = temp.getChild(j);
-                    if (className.contains(temp1.getClassName().toString())) {
-                        res = temp1;
-                        break out;
-                    } else if (temp1.getChildCount() > 0) {
-                        for (int k = 0; k < temp1.getChildCount(); k++) {
-                            AccessibilityNodeInfo temp2 = temp1.getChild(k);
-                            if (className.contains(temp2.getClassName().toString())) {
-                                res = temp2;
-                                break out;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return res != null && res.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
-    }
-
-    //智能点击
-    protected final boolean intelligentClickNode(AccessibilityNodeInfo nodeInfo) {
-        boolean res = false;
-        if (nodeInfo.isClickable()) {
-            res = nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-        }
-        //往上一层找
-        if (!res) {
-            AccessibilityNodeInfo parent = nodeInfo.getParent();
-            if (parent.isClickable()) {
-                res = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-            }
-            if (!res) {
-                int childCount = parent.getChildCount();
-                //找同级别的
-                for (int i = 0; i < childCount; i++) {
-                    AccessibilityNodeInfo accessibilityNodeInfo = parent.getChild(i);
-                    if (!res && accessibilityNodeInfo.isClickable()) {
-                        res = accessibilityNodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                    }
-                }
-            }
-            //往上二层
-            if (!res) {
-                AccessibilityNodeInfo parentP = parent.getParent();
-                if (parentP != null && parentP.isClickable()) {
-                    res = parentP.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                }
-            }
-        }
-        Log.d(TAG, "intelligentClickNode res:" + res);
-        return res;
-    }
-
-    //智能check
-    protected final boolean intelligentCheckNode(AccessibilityNodeInfo nodeInfo) {
-        boolean res = false;
-        if (nodeInfo.isCheckable()) {
-            res = nodeInfo.isChecked() || nodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-        }
-        //往上一层找
-        if (!res) {
-            AccessibilityNodeInfo parent = nodeInfo.getParent();
-            if (parent.isCheckable()) {
-                res = parent.isChecked() || parent.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-            }
-            if (!res) {
-                int childCount = parent.getChildCount();
-                //找同级别的
-                for (int i = 0; i < childCount; i++) {
-                    AccessibilityNodeInfo brotherNode = parent.getChild(i);
-                    if (!res && brotherNode.isCheckable()) {
-                        res = brotherNode.isChecked() || brotherNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                    }
-                }
-            }
-            //往上二层
-            if (!res) {
-                AccessibilityNodeInfo parentP = parent.getParent();
-                if (parentP != null && parentP.isCheckable()) {
-                    res = parentP.isChecked() || parentP.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                }
-            }
-        }
-        Log.d("test_access", "intelligentCheckNode res:" + res);
-        return res;
-    }
-
-    protected final void printChilds(AccessibilityNodeInfo root) {
+    public static final void printChilds(AccessibilityNodeInfo root) {
         if (root != null) {
-            Log.d(TAG, "====root start======name:" + root.getClassName() + ",child:" + root.getChildCount());
+            Log.d(TAG, "====root start======name:" + root.getClassName() + ",child:" + root.getChildCount() + "text:[" + root.getText() + "]" + "actions:[" + root.getActions() + "]");
             int childCount = root.getChildCount();
             if (childCount > 0) {
                 for (int i = 0; i < childCount; i++) {

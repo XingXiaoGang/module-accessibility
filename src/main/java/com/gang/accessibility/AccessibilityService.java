@@ -1,10 +1,15 @@
 package com.gang.accessibility;
 
 import android.accessibilityservice.AccessibilityServiceInfo;
+import android.annotation.TargetApi;
 import android.content.Intent;
+import android.os.Build;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.Toast;
+
+import com.gang.accessibility.utils.SharePref;
 
 import static com.gang.accessibility.ModuleConfig.DEBUG;
 import static com.gang.accessibility.ModuleConfig.TAG;
@@ -12,10 +17,11 @@ import static com.gang.accessibility.ModuleConfig.TAG;
 /**
  * Created by Administrator on 2016/5/6.
  */
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class AccessibilityService extends android.accessibilityservice.AccessibilityService {
 
     private AccessibilityTask mTask;
-    private boolean isOpen = false;
+    private boolean isStart = false;
 
     @Override
     public void onCreate() {
@@ -26,6 +32,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
     protected void onServiceConnected() {
         super.onServiceConnected();
         setServiceInfo();
+        start(null);
     }
 
     @Override
@@ -33,24 +40,15 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         int command = intent.getIntExtra(Statics.Key.COMMAND, -1);
         switch (command) {
             case Statics.START: {
-                mTask = (AccessibilityTask) intent.getSerializableExtra("task_impl");
-                if (mTask != null) {
-                    isOpen = true;
-                    setServiceInfo();
-                    Toast.makeText(getApplicationContext(), "stated", Toast.LENGTH_SHORT).show();
-                    if (DEBUG) {
-                        Log.d(TAG, "onStartCommand: started , mTask " + mTask);
-                    }
-                } else {
-                    if (DEBUG) {
-                        Log.d(TAG, "onStartCommand: start fialed , mTask is null ");
-                    }
-                }
+                start(intent);
                 break;
             }
             case Statics.STOP: {
-                isOpen = false;
+                isStart = false;
                 mTask = null;
+
+                InnerService.stopDemon(this);
+
                 Toast.makeText(getApplicationContext(), "stoped", Toast.LENGTH_SHORT).show();
                 break;
             }
@@ -60,10 +58,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (DEBUG) {
-            Log.d("test_ad", "=====onAccessibilityEvent=====" + AccessibilityEvent.eventTypeToString(event.getEventType()) + ":" + event.getClassName());
-        }
-        if (isOpen && mTask != null) {
+        if (isStart && mTask != null) {
             mTask.onAccessibilityEvent(event);
         }
     }
@@ -73,7 +68,12 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
     }
 
-    public void setServiceInfo() {
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    private void setServiceInfo() {
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
         info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_VISUAL;
@@ -81,4 +81,49 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         info.packageNames = new String[]{getPackageName(), "com.tencent.mm"};
         setServiceInfo(info);
     }
+
+    private void start(Intent intent) {
+        if (SharePref.getBoolean(this, SharePref.KEY_IS_OPEN, false) && !isStart) {
+            isStart = true;
+            if (mTask == null) {
+                String taskClazz = "";
+                if (intent != null) {
+                    taskClazz = intent.getStringExtra("task_impl");
+                }
+                if (TextUtils.isEmpty(taskClazz)) {
+                    taskClazz = SharePref.getString(this, SharePref.KEY_CURRENT_TASK, "");
+                }
+                if (!TextUtils.isEmpty(taskClazz)) {
+                    try {
+                        Class clazz = Class.forName(taskClazz);
+                        mTask = (AccessibilityTask) clazz.newInstance();
+                    } catch (Exception e) {
+                        if (DEBUG) {
+                            Log.d(TAG, "onStartCommand: 反射失败：", e);
+                        }
+                    }
+
+                    if (mTask != null) {
+                        isStart = true;
+                        mTask.setService(this);
+                        setServiceInfo();
+
+                        //保活
+                        InnerService.showHideNotification(this);
+
+                        Toast.makeText(getApplicationContext(), "stated", Toast.LENGTH_SHORT).show();
+                        if (DEBUG) {
+                            Log.d(TAG, "onStartCommand: started , mTask " + mTask);
+                        }
+                    } else {
+                        if (DEBUG) {
+                            Log.d(TAG, "onStartCommand: start fialed , mTask is null ");
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
 }

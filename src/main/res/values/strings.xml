@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">accessibility</string>
-    <string name="accessibility_service_description">场景：如用usb装app时，有些手机会弹窗需要手动同意，这个服务用来自动点击</string>
+    <string name="accessibility_service_description">开启以后，红包来时，可自动抢红包 只用于微信 </string>
 </resources>
