@@ -45,6 +45,9 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
             }
             case Statics.STOP: {
                 isStart = false;
+                if (mTask != null) {
+                    mTask.onDestroy();
+                }
                 mTask = null;
 
                 InnerService.stopDemon(this);
@@ -78,7 +81,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
         info.feedbackType = AccessibilityServiceInfo.FEEDBACK_VISUAL;
         info.notificationTimeout = 100;
-        info.packageNames = new String[]{getPackageName(), "com.tencent.mm"};
+        info.packageNames = new String[]{getPackageName(), "com.tencent.mm", "com.android.settings"};
         setServiceInfo(info);
     }
 

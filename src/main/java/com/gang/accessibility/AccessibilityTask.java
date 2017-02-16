@@ -147,4 +147,8 @@ public abstract class AccessibilityTask implements Serializable {
     protected boolean onRetryTask(String id) {
         return false;
     }
+
+    protected void onDestroy() {
+        
+    }
 }

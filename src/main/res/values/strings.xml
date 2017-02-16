@@ -1,4 +1,6 @@
 <resources>
-    <string name="app_name">accessibility</string>
-    <string name="accessibility_service_description">开启以后，红包来时，可自动抢红包 只用于微信 </string>
+    <string name="app_name_1">红包助手</string>
+    <string name="app_name_2">自动安装确认</string>
+    <string name="wx_red_package_description">开启以后，红包来时，可自动抢红包 只用于微信 </string>
+    <string name="auto_allow_description">开启以后，用adb批量安装应用时，可自动点击确认 </string>
 </resources>
