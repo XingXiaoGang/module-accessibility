@@ -29,21 +29,11 @@ public class AutoAllowTask extends AccessibilityTask implements Handler.Callback
 
     public AutoAllowTask() {
         mHandler = new Handler(this);
+        mHandler.sendEmptyMessage(START_ID);
     }
 
     @Override
     protected void onAccessibilityEvent(AccessibilityEvent event) {
-        if (event == null) {
-            return;
-        }
-        switch (event.getEventType()) {
-            case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED: {
-                if (mHandler != null) {
-                    mHandler.sendEmptyMessage(START_ID);
-                }
-                break;
-            }
-        }
     }
 
     @Override
