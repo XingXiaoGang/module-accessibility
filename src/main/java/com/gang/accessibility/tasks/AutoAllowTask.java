@@ -34,6 +34,7 @@ public class AutoAllowTask extends AccessibilityTask implements Handler.Callback
 
     @Override
     protected void onAccessibilityEvent(AccessibilityEvent event) {
+
     }
 
     @Override
@@ -53,7 +54,6 @@ public class AutoAllowTask extends AccessibilityTask implements Handler.Callback
                                     if (DEBUG) {
                                         Log.d(TAG, "handleMessage: 点击成功");
                                     }
-                                    return true;
                                 }
                             }
                         }
