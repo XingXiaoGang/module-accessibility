@@ -11,6 +11,8 @@ import android.widget.Toast;
 
 import com.gang.accessibility.utils.SharePref;
 
+import org.saturn.daemon.KeepAliveHelper;
+
 import static com.gang.accessibility.ModuleConfig.DEBUG;
 import static com.gang.accessibility.ModuleConfig.TAG;
 
@@ -113,6 +115,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
 
                         //保活
                         InnerService.showHideNotification(this);
+                        KeepAliveHelper.getInstance().start(getApplicationContext(), InnerService.class.getName(), 22879);
 
                         Toast.makeText(getApplicationContext(), "stated", Toast.LENGTH_SHORT).show();
                         if (DEBUG) {
