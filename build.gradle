@@ -1,14 +1,11 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "23.0.1"
-
+    compileSdkVersion Integer.parseInt(CompileSdkVersion)
+    buildToolsVersion BuildToolsVersion
     defaultConfig {
-        minSdkVersion 15
-        targetSdkVersion 21
-        versionCode 1
-        versionName "1.0"
+        minSdkVersion Integer.parseInt(MinSdkVersion)
+        targetSdkVersion Integer.parseInt(TargetSdkVersion)
     }
     buildTypes {
         release {
@@ -24,6 +21,6 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:support-v4:23.0.1'
+    compile 'com.android.support:support-v4:' + BuildToolsVersion
     compile 'com.google.code.gson:gson:2.1'
 }
