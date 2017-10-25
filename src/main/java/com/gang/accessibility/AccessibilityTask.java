@@ -1,6 +1,7 @@
 package com.gang.accessibility;
 
 import android.annotation.TargetApi;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
@@ -40,21 +41,32 @@ public abstract class AccessibilityTask implements Serializable {
     }
 
     protected final List<AccessibilityNodeInfo> findNodeWithActionByText(String text, int action) {
-        AccessibilityNodeInfo accessibilityNodeInfo = null;
         final AccessibilityNodeInfo root = getRootNode();
         List<AccessibilityNodeInfo> res = new ArrayList<>();
         if (root != null) {
             final int maxDeepth = 3;
             List<AccessibilityNodeInfo> nodeInfos = root.findAccessibilityNodeInfosByText(text);
             for (AccessibilityNodeInfo nodeInfo : nodeInfos) {
+                if (ModuleConfig.DEBUG) {
+                    Log.d(TAG, "findNodeWithActionByText: 找到：" + nodeInfo);
+                }
                 if ((nodeInfo.getActions() & action) == action) {
                     res.add(nodeInfo);
                 } else {
                     int deepth = 0;
                     while (deepth < maxDeepth && (nodeInfo.getActions() & action) != action && nodeInfo.getParent() != null) {
                         nodeInfo = nodeInfo.getParent();
-                        if (nodeInfo != null && (nodeInfo.getActions() & action) == action) {
-                            res.add(nodeInfo);
+                        if (nodeInfo != null) {
+                            if ((nodeInfo.getActions() & action) == action) {
+                                res.add(nodeInfo);
+                            } else if (nodeInfo.getChildCount() > 0) {
+                                for (int i = 0; i < nodeInfo.getChildCount(); i++) {
+                                    AccessibilityNodeInfo note = nodeInfo.getChild(i);
+                                    if ((note.getActions() & action) == action) {
+                                        res.add(note);
+                                    }
+                                }
+                            }
                             break;
                         }
                         deepth++;
@@ -63,6 +75,40 @@ public abstract class AccessibilityTask implements Serializable {
             }
         }
         return res;
+    }
+
+    protected final List<AccessibilityNodeInfo> findNodeWithClassByRect(String className, Rect area, int action) {
+        final AccessibilityNodeInfo root = getRootNode();
+        List<AccessibilityNodeInfo> res = new ArrayList<>();
+        if (root != null) {
+            final int maxDeepth = 3;
+            for (int i = 0; i < root.getChildCount(); i++) {
+                AccessibilityNodeInfo node = root.getChild(i);
+                if (node != null) {
+                    if (matchFeatures(node, className, area, action)) {
+                        res.add(node);
+                    } else {
+                        for (int i1 = 0; i1 < node.getChildCount(); i1++) {
+
+                        }
+                    }
+                }
+            }
+        }
+        return res;
+    }
+
+    protected final boolean matchFeatures(AccessibilityNodeInfo node, String className, Rect area, int action) {
+        Rect tempRect = new Rect();
+        if (node != null) {
+            if (node.getClassName().toString().contains(className) && (node.getActions() & action) == action) {
+                node.getBoundsInScreen(tempRect);
+                if (area.contains(tempRect)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     protected final AccessibilityNodeInfo findNodeWithActionById(String id, int action) {
@@ -149,6 +195,6 @@ public abstract class AccessibilityTask implements Serializable {
     }
 
     protected void onDestroy() {
-        
+
     }
 }
